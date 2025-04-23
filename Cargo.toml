@@ -1,7 +1,12 @@
 [package]
-name = "idtk"
-version = "0.1.0"
+authors = ["Joern Barthel <joern@barthel.digital>"]
+categories = ["cryptography"]
+description = "Expiring, signed identifier with optional AAD"
 edition = "2024"
+license = "MIT"
+name = "idtk"
+repository = "https://github.com/yaw/idtk"
+version = "0.1.0"
 
 [dependencies]
 fast32 = { version = "1.0", optional = true }
