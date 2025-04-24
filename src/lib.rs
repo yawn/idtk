@@ -1,3 +1,5 @@
+use std::array::TryFromSliceError;
+
 use ring::{
     aead::Aad,
     hmac::{Context, HMAC_SHA256, Key},
@@ -98,7 +100,7 @@ impl Authority {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Token([u8; Token::SIZE]);
 
 impl Token {
@@ -140,6 +142,24 @@ impl Token {
 
     fn tag(&self) -> &[u8] {
         &self.0[Self::SIZE_IAT + Self::SIZE_ID..]
+    }
+}
+
+impl TryInto<i128> for Token {
+    type Error = TryFromSliceError;
+
+    fn try_into(self) -> std::result::Result<i128, Self::Error> {
+        let x: [u8; 16] = self.0[Self::SIZE_IAT..Self::SIZE_IAT + Self::SIZE_ID].try_into()?;
+        Ok(i128::from_be_bytes(x))
+    }
+}
+
+impl TryInto<u128> for Token {
+    type Error = TryFromSliceError;
+
+    fn try_into(self) -> std::result::Result<u128, Self::Error> {
+        let x: [u8; 16] = self.0[Self::SIZE_IAT..Self::SIZE_IAT + Self::SIZE_ID].try_into()?;
+        Ok(u128::from_be_bytes(x))
     }
 }
 
@@ -251,5 +271,22 @@ mod tests {
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
         );
+    }
+
+    #[test]
+    fn test_token_to_128() {
+        let iat = [0u8; 8];
+        let id = [
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        ];
+        let tag = [2u8; 32];
+
+        let token = Token::new(&iat, &id, &tag);
+
+        let id: u128 = token.clone().try_into().unwrap();
+        assert_eq!(u128::MAX, id);
+
+        let id: i128 = token.try_into().unwrap();
+        assert_eq!(-1, id);
     }
 }
